@@ -1,0 +1,85 @@
+# BUTTONSIMULATOR DATA SAVING SCRIPT + ETC COMPLETE!
+# IMPROVED BY IRON [ME]
+# ORIGINAL SCRIPT MADE BY IceyyFog [ON YT]
+
+local DataStoreService = game:GetService('DataStoreService')
+local DataStore = DataStoreService:GetDataStore('Data')
+
+local function saveData(player)
+	if player:FindFirstChild('leaderstats') then
+		local leaderstats = player.leaderstats
+		local dataToSave = {
+			Cash = leaderstats.Cash.Value,
+			Multi = leaderstats.Multi.Value
+		}
+		local success, errorMessage = pcall(DataStore.SetAsync, DataStore, tostring(player.UserId), dataToSave)
+		
+		if success then
+			print('Data saved')
+		else
+			print('Data didn\'t save: ' .. errorMessage)
+		end
+	else
+		print('Leaderstats folder not found for player:', player.Name)
+	end
+end
+
+local function createLeaderstats(player)
+	local leaderstats = Instance.new('Folder')
+	leaderstats.Name = 'leaderstats'
+	leaderstats.Parent = player
+
+	local Cash = Instance.new('NumberValue')
+	Cash.Name = 'Cash'
+	Cash.Value = 0
+	Cash.Parent = leaderstats
+	
+	local Multi = Instance.new('NumberValue')
+	Multi.Name = 'Multi'
+	Multi.Value = 0.5
+	Multi.Parent = leaderstats
+end
+
+local function loadData(player)
+	local success, data = pcall(function()
+		return DataStore:GetAsync(tostring(player.UserId))
+	end)
+	if success and data then
+		if player:FindFirstChild('leaderstats') then
+			local leaderstats = player.leaderstats
+			leaderstats.Cash.Value = data.Cash or 0
+			leaderstats.Multi.Value = data.Multi or 0.5
+		else
+			print('Leaderstats folder not found for player:', player.Name)
+		end
+	else
+		print("Failed to load player data for player:", player.Name)
+	end
+end
+
+local function playerAdded(player)
+	createLeaderstats(player)
+	loadData(player)
+	
+	while player.Parent do
+		wait(1)
+		if player:FindFirstChild('leaderstats') then
+			local leaderstats = player.leaderstats
+			leaderstats.Cash.Value += 1 * leaderstats.Multi.Value
+		end
+	end
+end
+
+local function playerRemoving(player)
+	saveData(player)
+end
+
+local function gameClosing()
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		saveData(player)
+	end
+end
+
+game.Players.PlayerAdded:Connect(playerAdded)
+game.Players.PlayerRemoving:Connect(playerRemoving)
+game:BindToClose(gameClosing)
